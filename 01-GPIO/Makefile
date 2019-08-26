@@ -1,5 +1,5 @@
-BIN=01-led
-OBJS=01-led.o
+BIN=02-button
+OBJS=02-button.o
 
 CC=avr-gcc
 OBJCOPY=avr-objcopy
