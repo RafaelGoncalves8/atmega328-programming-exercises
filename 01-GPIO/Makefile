@@ -1,19 +1,29 @@
-BIN=02-button
-OBJS=02-button.o
+BIN  = main
+OBJS = 03-finite-states_machine.o
 
-CC=avr-gcc
-OBJCOPY=avr-objcopy
-CFLAGS=-Os -DF_CPU=16000000UL -mmcu=atmega328p
-PORT=/dev/ttyACM0
+CC         = avr-gcc
+OBJCOPY    = avr-objcopy
+OBJDUMP    = avr-objdump
+AVRDUDE    = avrdude
+PROGRAMMER = arduino
 
-${BIN}.hex: ${BIN}.elf
-	${OBJCOPY} -O ihex -R .eeprom $< $@
+PGPORT   ?= /dev/ttyACM0
+BAUDRATE ?= 57600
+DEVICE    = atmega328p
+OPTIMIZE  = -O0
+FREQ      = 16000000
 
-${BIN}.elf: ${OBJS}
-	${CC} -o $@ $^
+OPTIONS = -fpack-struct -fshort-enums
+CFLAGS=-Wall -gdwarf-2 -DF_CPU=$(FREQ)  -mmcu=$(DEVICE) $(OPTIMIZE)
 
-install: ${BIN}.hex
-	avrdude -F -V -c arduino -p ATMEGA328P -P ${PORT} -b 115200 -U flash:w:$<
+$(BIN).hex: $(BIN).elf
+	$(OBJCOPY) -O ihex -R .eeprom $< $@
+
+$(BIN).elf: $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+burn: ${BIN}.hex
+	$(AVRDUDE) -c $(PROGRAMMER) -p $(DEVICE) -P $(PGPORT) -B $(BAUDRATE) -u -U flash:w:$<
 
 clean:
-	rm -f ${BIN}.elf ${BIN}.hex ${OBJS}
+	rm -f $(BIN).elf $(BIN).hex $(OBJS)
