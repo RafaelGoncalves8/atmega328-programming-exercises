@@ -3,13 +3,18 @@
 ; Define registers
 .def rCounter  = r16
 .def rCounterIn = r25
-; .def rCounterInIn = r26
+.def rCounterOut = r26
+.def rState = r27
 .def rAux = r24
 
 ; Define constants
 .equ cInner = 0xFF
 .equ cOuter = 0xFF
+.equ cFast = 0x01
+.equ cSlow = 0x10
 ; .equ cInIn  = 0x0F
+.equ cIsSlow = 0x01
+.equ cIsFast = 0x00
 
 ; program starts at 0x0000 (value of PC after reset)
 .org 0x0000
@@ -39,6 +44,15 @@ main_loop:
 ; andi r16,0x01   ; apply mask
 ; brbs 1, fast    ; branch if button on
 
+fast:
+ldi rCounterOut, cFast    ; 1 clock cycle
+ldi rState, cIsFast       ; 1 clock cycle
+rjmp loop                ; 2 clock cycle
+
+slow:
+ldi rCounterOut, cSlow    ; 1 clock cycle
+ldi rState, cIsSlow       ; 1 clock cycle
+
 loop:
 
 ; Led off
@@ -52,23 +66,18 @@ loop1:
 ldi rCounterIn, cInner  ; 1 clock cycle
 
 loop1i:
+lds rAux,0x26    ; read button
+andi rAux, 0x01  ; apply mask
+cp rAux, rState  ; cmp to state
+breq swap        ; branch if button on
+
 dec rCounterIn          ; 1 clock cycle
-nop                     ; 1 clock cycle
-nop                     ; 1 clock cycle
-nop                     ; 1 clock cycle
-nop                     ; 1 clock cycle
-nop                     ; 1 clock cycle
-nop                     ; 1 clock cycle
-nop                     ; 1 clock cycle
-nop                     ; 1 clock cycle
-nop                     ; 1 clock cycle
-nop                     ; 1 clock cycle
 brne loop1i             ; if not zero: jmp(2 cycle), else: 1cycle
 dec rCounter            ; 1 clock cycle
 brne loop1              ; if not zero: jmp(2 cycle), else: 1cycle
 nop                     ; 1 clock cycle
 
-set led on
+; set led on
 lds rAux,0x25            ; 2 clock cycle
 ori rAux,0b00100000      ; 1 clock cycle
 sts 0x25,rAux            ; 2 clock cycle
@@ -79,6 +88,11 @@ loop2:
 ldi rcounterIn, cInner  ; 1 clock cycle
 
 loop2i:
+lds rAux,0x26    ; read button
+andi rAux, 0x01  ; apply mask
+cp rAux, rState  ; cmp to state
+breq swap        ; branch if button on
+
 dec rCounterIn          ; 1 clock cycle
 brne loop2i             ; if not zero: jmp(2 cycle), else: 1cycle
 dec rCounter            ; 1 clock cycle
@@ -86,6 +100,11 @@ brne loop2              ; if not zero: jmp(2 cycle), else: 1cycle
 nop                     ; 1 clock cycle
 
 rjmp loop               ; 2 clock cycle
+
+swap:
+cpi rState, cSlow
+breq Slow
+rjmp Fast
 
 
 ; ;set led on
