@@ -71,20 +71,20 @@ ldi rCounter, cOuter    ; 1 clock cycle
 
 loop1:
 
-ldi rCounterIn, cInner
+ldi rCounterIn, cInner  ; 1 clock cycle
 
 loop1i:
-lds rAux,0x26    ; read button
-andi rAux, 0x01  ; apply mask
-cp rAux, rState  ; cmp to state
-breq swap        ; branch if button on
+lds rAux,0x26           ; 2 clock cycle
+andi rAux, 0x01         ; 1 clock cycle
+cp rAux, rState         ; 1 clock cycle
+breq swap               ; if not zero: jmp(2 cycle), else: 1cycle
 
 dec rCounterIn          ; 1 clock cycle
 brne loop1i             ; if not zero: jmp(2 cycle), else: 1cycle
 dec rCounter            ; 1 clock cycle
 brne loop1              ; if not zero: jmp(2 cycle), else: 1cycle
-dec rCounterOut
-brne loop1o
+dec rCounter            ; 1 clock cycle
+brne loop1o             ; if not zero: jmp(2 cycle), else: 1cycle
 nop                     ; 1 clock cycle
 
 ; set led on
@@ -92,31 +92,31 @@ lds rAux,0x25            ; 2 clock cycle
 ori rAux,0b00100000      ; 1 clock cycle
 sts 0x25,rAux            ; 2 clock cycle
 
-mov rCounterOut, rTmp
+mov rCounterOut, rTmp   ; 1 clock cycle
 
 loop2o:
 ldi rCounter, cOuter    ; 1 clock cycle
 
 loop2:
-ldi rCounterIn, cInner
+ldi rCounterIn, cInner  ; 1 clock cycle
 
 loop2i:
-lds rAux,0x26    ; read button
-andi rAux, 0x01  ; apply mask
-cp rAux, rState  ; cmp to state
-breq swap        ; branch if button on
+lds rAux,0x26           ; 2 clock cycle
+andi rAux, 0x01         ; 1 clock cycle
+cp rAux, rState         ; 1 clock cycle
+breq swap               ; if not zero: jmp(2 cycle), else: 1cycle
 
 dec rCounterIn          ; 1 clock cycle
 brne loop2i             ; if not zero: jmp(2 cycle), else: 1cycle
 dec rCounter            ; 1 clock cycle
 brne loop2              ; if not zero: jmp(2 cycle), else: 1cycle
-dec rCounterOut
-brne loop2o
+dec rCounterOut         ; 1 clock cycle
+brne loop2o             ; if not zero: jmp(2 cycle), else: 1cycle
 nop                     ; 1 clock cycle
 
 rjmp loop               ; 2 clock cycle
 
 swap:
-andi rState, cIsFast
-brbs 1, fast
-rjmp slow
+andi rState, cIsFast    ; 1 clock cycle
+brbs 1, fast            ; if not zero: jmp(2 cycle), else: 1cycle
+rjmp slow               ; 2 clock cycle
