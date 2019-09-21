@@ -1,20 +1,28 @@
 .device ATmega328P
 
+; Blink implemented trough 3 loops mediated by the variebles (registers)
+; cCounterOut, cCounter and cCounterIn mediated by the values in
+; rTmp, cOuter and cInner. The value in rTmp is determined by the
+; values cFast and cSlow controlled by the variable rState that 
+; indicates if the button is pressed (1) or not (0). The result is
+; a blinking system that resonates at 1Mhz (slow) when the button
+; is not pressed and in 5MHz (fast) when it is.
+
 ; Define registers
 .def rCounter  = r16
 .def rCounterIn = r25
 .def rCounterOut = r26
-.def rState = r27
+.def rState = r23
 .def rAux = r24
+.def rTmp = r27
 
 ; Define constants
 .equ cInner = 0xFF
 .equ cOuter = 0xFF
 .equ cFast = 0x01
-.equ cSlow = 0x10
-; .equ cInIn  = 0x0F
-.equ cIsSlow = 0x01
-.equ cIsFast = 0x00
+.equ cSlow = 0x05
+.equ cIsSlow = 0x00
+.equ cIsFast = 0x01
 
 ; program starts at 0x0000 (value of PC after reset)
 .org 0x0000
@@ -39,31 +47,31 @@ lds rAux,0x26
 ori rAux,0b00000001
 sts 0x26,rAux
 
-main_loop:
-; lds r16,0x26    ; read button
-; andi r16,0x01   ; apply mask
-; brbs 1, fast    ; branch if button on
-
 fast:
-ldi rCounterOut, cFast    ; 1 clock cycle
+ldi rTmp, cFast           ; 1 clock cycle
 ldi rState, cIsFast       ; 1 clock cycle
-rjmp loop                ; 2 clock cycle
+jmp loop                  ; 2 clock cycle
 
 slow:
-ldi rCounterOut, cSlow    ; 1 clock cycle
+ldi rTmp, cSlow           ; 1 clock cycle
 ldi rState, cIsSlow       ; 1 clock cycle
 
 loop:
 
-; Led off
+; Led offfast
 lds rAux,0x25            ; 2 clock cycle
 andi rAux,0b11011111     ; 1 clock cycle
 sts 0x25,rAux            ; 2 clock cycle
 
+mov rCounterOut, rTmp    ; 1 clock cycle
+
+loop1o:
+
 ldi rCounter, cOuter    ; 1 clock cycle
 
 loop1:
-ldi rCounterIn, cInner  ; 1 clock cycle
+
+ldi rCounterIn, cInner
 
 loop1i:
 lds rAux,0x26    ; read button
@@ -75,6 +83,8 @@ dec rCounterIn          ; 1 clock cycle
 brne loop1i             ; if not zero: jmp(2 cycle), else: 1cycle
 dec rCounter            ; 1 clock cycle
 brne loop1              ; if not zero: jmp(2 cycle), else: 1cycle
+dec rCounterOut
+brne loop1o
 nop                     ; 1 clock cycle
 
 ; set led on
@@ -82,10 +92,13 @@ lds rAux,0x25            ; 2 clock cycle
 ori rAux,0b00100000      ; 1 clock cycle
 sts 0x25,rAux            ; 2 clock cycle
 
+mov rCounterOut, rTmp
+
+loop2o:
 ldi rCounter, cOuter    ; 1 clock cycle
 
 loop2:
-ldi rcounterIn, cInner  ; 1 clock cycle
+ldi rCounterIn, cInner
 
 loop2i:
 lds rAux,0x26    ; read button
@@ -97,40 +110,13 @@ dec rCounterIn          ; 1 clock cycle
 brne loop2i             ; if not zero: jmp(2 cycle), else: 1cycle
 dec rCounter            ; 1 clock cycle
 brne loop2              ; if not zero: jmp(2 cycle), else: 1cycle
+dec rCounterOut
+brne loop2o
 nop                     ; 1 clock cycle
 
 rjmp loop               ; 2 clock cycle
 
 swap:
-cpi rState, cSlow
-breq Slow
-rjmp Fast
-
-
-; ;set led on
-; lds rAux,0x25            ; 2 clock cycle
-; ori rAux,0b00100000      ; 1 clock cycle
-; sts 0x25,rAux            ; 2 clock cycle
-;
-; ;set led off
-; lds rAux,0x25            ; 2 clock cycle
-; andi rAux,0b11011111     ; 1 clock cycle
-; sts 0x25,rAux            ; 2 clock cycle
-;
-; rjmp loop
-;
-; led_off:
-;
-; lds rAux,0x25            ; 2 clock cycle
-; andi rAux,0b11011111     ; 1 clock cycle
-; sts 0x25,rAux            ; 2 clock cycle
-;
-; rjmp loop
-;
-; led_on:
-;
-; lds rAux,0x25            ; 2 clock cycle
-; ori rAux,0b00100000      ; 1 clock cycle
-; sts 0x25,rAux            ; 2 clock cycle
-;
-; rjmp loop
+andi rState, cIsFast
+brbs 1, fast
+rjmp slow
