@@ -10,17 +10,17 @@
 
 ; Define registers
 .def rCounter  = r16
-.def rCounterIn = r25
-.def rCounterOut = r26
-.def rState = r23
-.def rAux = r24
+.def rCounterIn = r23
+.def rCounterOut = r24
+.def rState = r25
+.def rAux = r26
 .def rTmp = r27
 
 ; Define constants
 .equ cInner = 0xFF
-.equ cOuter = 0xFF
-.equ cFast = 0x01
-.equ cSlow = 0x05
+.equ cOuter = 0xC4
+.equ cFast = 0x04    ; 5.0 Hz
+.equ cSlow = 0x14    ; 1.0 Hz
 .equ cIsSlow = 0x00
 .equ cIsFast = 0x01
 
@@ -70,6 +70,7 @@ loop1o:
 ldi rCounter, cOuter    ; 1 clock cycle
 
 loop1:
+nop                     ; 1 clock cycle
 
 ldi rCounterIn, cInner  ; 1 clock cycle
 
@@ -77,15 +78,14 @@ loop1i:
 lds rAux,0x26           ; 2 clock cycle
 andi rAux, 0x01         ; 1 clock cycle
 cp rAux, rState         ; 1 clock cycle
-breq swap               ; if not zero: jmp(2 cycle), else: 1cycle
+breq swap               ; if not equal: jmp(2 cycle), else: 1cycle
 
 dec rCounterIn          ; 1 clock cycle
 brne loop1i             ; if not zero: jmp(2 cycle), else: 1cycle
 dec rCounter            ; 1 clock cycle
 brne loop1              ; if not zero: jmp(2 cycle), else: 1cycle
-dec rCounter            ; 1 clock cycle
+dec rCounterOut         ; 1 clock cycle
 brne loop1o             ; if not zero: jmp(2 cycle), else: 1cycle
-nop                     ; 1 clock cycle
 
 ; set led on
 lds rAux,0x25            ; 2 clock cycle
@@ -98,6 +98,7 @@ loop2o:
 ldi rCounter, cOuter    ; 1 clock cycle
 
 loop2:
+nop                     ; 1 clock cycle
 ldi rCounterIn, cInner  ; 1 clock cycle
 
 loop2i:
@@ -112,7 +113,6 @@ dec rCounter            ; 1 clock cycle
 brne loop2              ; if not zero: jmp(2 cycle), else: 1cycle
 dec rCounterOut         ; 1 clock cycle
 brne loop2o             ; if not zero: jmp(2 cycle), else: 1cycle
-nop                     ; 1 clock cycle
 
 rjmp loop               ; 2 clock cycle
 
