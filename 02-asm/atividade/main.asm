@@ -24,6 +24,14 @@
 .equ cIsSlow = 0x00
 .equ cIsFast = 0x01
 
+; Expressão calculada para o tempo
+; t = 1/(16 000 000)
+; T = (((8*t)*cInner + 11*t)*cFast + 14*t)*cOut
+; T = (((8*t)*cInner + 11*t)*cSlow + 14*t)*cOut
+; 
+; Obs: o ajuste fino da frequência foi feita utilizando um
+; osciloscópio para medir o período.
+
 ; program starts at 0x0000 (value of PC after reset)
 .org 0x0000
 jmp main
