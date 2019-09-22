@@ -1,5 +1,5 @@
-Atividade 03 - Display de 7 segmentos
-=====================================
+Atividade 04 - Piscar LEDs em Assembly
+======================================
 
 Compilar:
 make
