@@ -19,10 +19,14 @@ unsigned char *p_portb;
 unsigned char *p_ddrd;
 unsigned char *p_pind;
 
+// Interrupt control registers
 unsigned char *p_eicra;
 unsigned char *p_eimsk;
+unsigned char *p_pcicr;
+unsigned char *p_pcmsk1;
 
-int delay = 1000;
+// Aux global variables
+volatile int delay = 1000;
 unsigned char is_clockwise = 1;
 unsigned char state = 0;
 
@@ -36,8 +40,7 @@ unsigned char colors[7] = {
   0b00000101  // Magenta
 };
 
-/* rotina de serviço de interrupção que é executada toda vez que o botão é pressionado (borda de descida no pino INT0)
-*/
+// If delay > 125ms delay is set to half of its value
 ISR(INT0_vect)
 {
   if (delay > 125)
@@ -48,6 +51,15 @@ ISR(INT0_vect)
   {
     delay = 1000;
   }
+}
+
+// Change colors between cw and ccw orientation
+ISR(PCINT1_vect)
+{
+  if (is_clockwise)
+    is_clockwise = 0;
+  else
+    is_clockwise = 1;
 }
 
 void setup(void)
@@ -61,6 +73,8 @@ void setup(void)
   p_pind = (unsigned char *) 0x29;
   p_eicra = (unsigned char *) 0x69;
   p_eimsk = (unsigned char *) 0x3D;
+  p_pcicr = (unsigned char *) 0x68;
+  p_pcmsk1 = (unsigned char *) 0x6C;
 
   CLR(*p_ddrc, 0); // PC0 as input
   CLR(*p_ddrd, 2); // PD2 as input
@@ -71,8 +85,13 @@ void setup(void)
   /* Led initially turn off. */
   *p_portb = colors[0];
 
+  // SETS PCINT8 interruption at PC0
+  *p_pcicr |= 0b00000010;
+  SET(*p_pcmsk1, 0);
+
   *p_eicra |= 0b00000011; // INT0 configured to be triggered at rising edge
-  SET(*p_eimsk,1); // Turn on INT0 interruption
+  SET(*p_eimsk,0); // Turn on INT0 interruption
+
   sei(); // Turn on interruptions
 }
 
@@ -89,7 +108,6 @@ int main(void)
     else
       state = (state+6)%7;
 
-    /* *p_portb = (*p_portb & 0b11111000) | colors[state]; */
-    *p_portb = colors[state];
+    *p_portb = (*p_portb & 0b11111000) | colors[state];
   }
 }
