@@ -1,5 +1,5 @@
-Atividade 05 - Interrupções
-===========================
+Atividade 06 - UART
+===================
 
 Compilar:
 make

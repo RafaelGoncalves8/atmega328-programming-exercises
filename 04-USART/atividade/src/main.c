@@ -8,7 +8,7 @@
 
 char msg[] = " Out of the night that covers me,\n Black as the Pit from pole to pole,\n I thank whatever gods may be\n For my unconquerable soul.\n In the fell clutch of circumstance\n I have not winced nor cried aloud.\n Under the bludgeonings of chance\n My head is bloody, but unbowed.\n Beyond this place of wrath and tears\n Looms but the Horror of the shade,\n And yet the menace of the years\n Finds, and shall find, me unafraid.\n It matters not how strait the gate,\n How charged with punishments the scroll.\n I am the master of my fate:\n I am the captain of my soul.\n";
 
-char success[] = " Mensagem transmitida com sucesso! ";
+char success[] = " Mensagem transmitida com sucesso!\n";
 
 unsigned char *p_UCSR0A;
 unsigned char *p_UCSR0B;
@@ -20,17 +20,20 @@ unsigned char *p_UBRR0L;
 void setup(void)
 {
   /* Set adresses. */
-  p_UBRR0H = 0xC5;
-  p_UBRR0L = 0xC4;
-  p_UCSR0A = 0xC0;
-  p_UCSR0B = 0xC1;
-  p_UCSR0C = 0xC2;
-  p_UDR0 = 0xC6;
+  p_UBRR0H = (unsigned char *) 0xC5;
+  p_UBRR0L = (unsigned char *) 0xC4;
+  p_UCSR0A = (unsigned char *) 0xC0;
+  p_UCSR0B = (unsigned char *) 0xC1;
+  p_UCSR0C = (unsigned char *) 0xC2;
+  p_UDR0 = (unsigned char *) 0xC6;
 
-  // f = 3.4kHz, UBRR0 = 25
+  // f = 38.4kHz, UBRR0 = 25
+  *p_UBRR0H = 0b00000000;
   *p_UBRR0L = 0b00011001;
+
   CLR(*p_UCSR0A, 1); // normal speed
   CLR(*p_UCSR0A, 0); // multiprocess desactivated
+
   // Interruptions desactivated
   CLR(*p_UCSR0B, 7);
   CLR(*p_UCSR0B, 6);
@@ -59,24 +62,22 @@ void setup(void)
 
 void send_byte(char c)
 {
-  // UDRE0 = *p_UCSRA & 0b00100000
-  while((*p_UCSR0A &(1<<(*p_UCSR0A & 0b00100000))) == 0);
+  while((*p_UCSR0A & 0b00100000) == 0); // Can transmit
 
   *p_UDR0 = c;
+
+  while((*p_UCSR0A & 0b01000000) == 0); // Empty buffer
 }
 
 int main(void)
 {
+  int i;
   setup();
 
   while(1)
   {
-    int i;
-
-    for(i = 0; i < 568; i++)
-    {
+    for(i = 0; i < 551; i++)
       send_byte(msg[i]);
-    }
     send_byte('\n');
 
     for(i = 0; i < 35; i++)
