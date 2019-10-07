@@ -54,17 +54,22 @@ main()
   unsigned char state = 0;
 
   /* Setup. */
-  CLR(*p_ddrc, 0);
-  *p_ddrd |= mask_ddrd;
+  CLR(*p_ddrc, 0); /* PC0 as input. */
+  SET(*p_pinc, 0); /* Set internal pullup resistor at PC0. */
+  *p_ddrd |= mask_ddrd; /* PD1-8 as output. */
   *p_portd = unite_segments(mask_nums[0]);
 
   while(1)
   {
-    if ((*p_pinc & 0b00000001) == 0) // Is pressed
+    if ((*p_pinc & 0b00000001) == 1) // Is not pressed
     {
-      state = (state + 1)%10;
-      *p_portd = unite_segments(mask_nums[state]);
-      _delay_ms(200);
+      _delay_ms(30);
+      if ((*p_pinc & 0b00000001) == 0) // Is pressed
+      {
+        state = (state + 1)%10;
+        *p_portd = unite_segments(mask_nums[state]);
+        _delay_ms(200);
+      }
     }
   }
 
