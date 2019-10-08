@@ -61,9 +61,9 @@ main()
 
   while(1)
   {
-    if ((*p_pinc & 0b00000001) == 1) // Is not pressed
+    if ((*p_pinc & 0b00000001) == 1)   // Is not pressed
     {
-      _delay_ms(30);
+      _delay_ms(30);                   // Debounce
       if ((*p_pinc & 0b00000001) == 0) // Is pressed
       {
         state = (state + 1)%10;
