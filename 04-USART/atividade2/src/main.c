@@ -9,7 +9,8 @@
 #define CLR(PIN,N) (PIN &= ~(1<<N))
 
 /* Macro for setting colors. */
-#define COLOR(PIN,N) (PIN = (PIN & 0b11111000) & (colors[N] & 0b00000111))
+/* #define COLOR(PIN,N) (PIN = (PIN & 0b11111000) & (colors[N] & 0b00000111)) */
+#define COLOR(PIN,N) (PIN = (colors[N] & 0b00000111))
 
 /* Rgb led output in PB0, PB1, PB2 */
 unsigned char *p_ddrb;
@@ -38,7 +39,7 @@ unsigned char *p_UBRR0L;
 volatile unsigned char receivedByte;
 volatile unsigned char new = 0; // There isnt new info at receivedByte
 
-char *msg = "Vazio!\n";
+char *empty = "Vazio!\n";
 char *msg = "Comando incorreto\n";
 char *red = "Comando: Acender LED - cor vermelha\n";
 char *green = "Comando: Acender LED - cor verde\n";
@@ -101,28 +102,6 @@ void setup(void)
   sei(); // Turn on interruptions
 }
 
-
-ISR (USART_RX_vect)
-{
-  receivedByte = UDR0;
-  new = 1;
-  SET(*p_UCSR0B, 5);
-}
-
-ISR (USART_UDRE_vect)
-{
-  if (new)
-  {
-    send_byte(msg);
-    new = 0;
-  }
-  else
-  {
-    send_byte(empty);
-  }
-  CLR(*p_UCSR0B, 5);
-}
-
 void send_byte(char c)
 {
   while((*p_UCSR0A & 0b00100000) == 0); // Can transmit
@@ -143,6 +122,25 @@ void send_msg(char *msg)
   }
 }
 
+ISR (USART_RX_vect)
+{
+  receivedByte = *p_UDR0;
+  new = 1;
+}
+
+ISR (USART_UDRE_vect)
+{
+  if (new)
+  {
+    send_msg(msg);
+    new = 0;
+  }
+  else
+  {
+    send_msg(empty);
+  }
+}
+
 void turn_led(unsigned char c)
 {
 
@@ -150,37 +148,37 @@ void turn_led(unsigned char c)
   {
     case 'R':
     case 'r':
-      COLOR(*p_portb, colors[1]);
+      COLOR(*p_portb, 1);
       msg = red;
       break;
     case 'G':
     case 'g':
-      COLOR(*p_portb, colors[2]);
+      COLOR(*p_portb, 2);
       msg = green;
       break;
     case 'B':
     case 'b':
-      COLOR(*p_portb, colors[3]);
+      COLOR(*p_portb, 3);
       msg = blue;
       break;
     case 'Y':
     case 'y':
-      COLOR(*p_portb, colors[4]);
+      COLOR(*p_portb, 4);
       msg = yellow;
       break;
     case 'C':
     case 'c':
-      COLOR(*p_portb, colors[5]);
+      COLOR(*p_portb, 5);
       msg = cyan;
       break;
     case 'M':
     case 'm':
-      COLOR(*p_portb, colors[6]);
+      COLOR(*p_portb, 6);
       msg = magenta;
       break;
     case 'W':
     case 'w':
-      COLOR(*p_portb, colors[7]);
+      COLOR(*p_portb, 7);
       msg = white;
       break;
   }
