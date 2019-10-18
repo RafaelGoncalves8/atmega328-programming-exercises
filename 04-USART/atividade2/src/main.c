@@ -1,6 +1,6 @@
-#include <util/delay.h>
-
 #define F_CPU 16000000UL // 16 MHz clock speed
+#include <util/delay.h>
+#include <avr/interrupt.h>
 
 #define MAX 10000
 
@@ -37,6 +37,16 @@ unsigned char *p_UBRR0L;
 
 volatile unsigned char receivedByte;
 volatile unsigned char new = 0; // There isnt new info at receivedByte
+
+char *msg = "Vazio!\n";
+char *msg = "Comando incorreto\n";
+char *red = "Comando: Acender LED - cor vermelha\n";
+char *green = "Comando: Acender LED - cor verde\n";
+char *blue = "Comando: Acender LED - cor azul\n";
+char *yellow = "Comando: Acender LED - cor amarelo\n";
+char *cyan = "Comando: Acender LED - cor ciano\n";
+char *magenta = "Comando: Acender LED - cor magenta\n";
+char *white = "Comando: Acender LED - cor branco\n";
 
 void setup(void)
 {
@@ -92,18 +102,25 @@ void setup(void)
 }
 
 
-ISR (USART_RXC_vect)
+ISR (USART_RX_vect)
 {
   receivedByte = UDR0;
   new = 1;
-}
-
-ISR (USART_TX_vect)
-{
+  SET(*p_UCSR0B, 5);
 }
 
 ISR (USART_UDRE_vect)
 {
+  if (new)
+  {
+    send_byte(msg);
+    new = 0;
+  }
+  else
+  {
+    send_byte(empty);
+  }
+  CLR(*p_UCSR0B, 5);
 }
 
 void send_byte(char c)
@@ -122,48 +139,52 @@ void send_msg(char *msg)
   while(msg[i] != '\0')
   {
     send_byte(msg[i]);
-    i++
+    i++;
   }
 }
 
 void turn_led(unsigned char c)
 {
-  char msg[MAX] = "Comando incorreto\n"
 
-  switch (led_color)
+  switch (c)
   {
     case 'R':
     case 'r':
       COLOR(*p_portb, colors[1]);
-      msg = "Comando: Acender LED - cor vermelha\n"
+      msg = red;
       break;
     case 'G':
     case 'g':
       COLOR(*p_portb, colors[2]);
+      msg = green;
       break;
     case 'B':
     case 'b':
       COLOR(*p_portb, colors[3]);
+      msg = blue;
       break;
     case 'Y':
     case 'y':
       COLOR(*p_portb, colors[4]);
+      msg = yellow;
       break;
     case 'C':
     case 'c':
       COLOR(*p_portb, colors[5]);
+      msg = cyan;
       break;
     case 'M':
     case 'm':
       COLOR(*p_portb, colors[6]);
+      msg = magenta;
       break;
     case 'W':
     case 'w':
       COLOR(*p_portb, colors[7]);
+      msg = white;
       break;
   }
 
-  send_msg(msg);
   _delay_ms(200);
   COLOR(*p_portb, colors[0]);
 }
