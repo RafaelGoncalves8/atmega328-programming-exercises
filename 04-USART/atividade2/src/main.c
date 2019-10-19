@@ -49,6 +49,8 @@ char *cyan = "Comando: Acender LED - cor ciano\n";
 char *magenta = "Comando: Acender LED - cor magenta\n";
 char *white = "Comando: Acender LED - cor branco\n";
 
+int j = 0;
+
 void setup(void)
 {
   p_ddrb = (unsigned char *) 0x24;
@@ -104,22 +106,7 @@ void setup(void)
 
 void send_byte(char c)
 {
-  while((*p_UCSR0A & 0b00100000) == 0); // Can transmit
-
-  SET(*p_UCSR0B, 5); // Set empty data register
   *p_UDR0 = c;
-
-  while((*p_UCSR0A & 0b01000000) == 0); // Empty buffer
-}
-
-void send_msg(char *msg)
-{
-  int i = 0;
-  while(msg[i] != '\0')
-  {
-    send_byte(msg[i]);
-    i++;
-  }
 }
 
 ISR (USART_RX_vect)
@@ -130,14 +117,14 @@ ISR (USART_RX_vect)
 
 ISR (USART_UDRE_vect)
 {
-  if (new)
+  if (msg[j] == '\0')
   {
-    send_msg(msg);
-    new = 0;
+    CLR(*p_UCSR0B, 5); // Empty data register
   }
   else
   {
-    send_msg(empty);
+    send_byte(msg[j]);
+    j++;
   }
 }
 
@@ -195,6 +182,9 @@ int main(void)
   {
     if (new)
     {
+      j = 0;
+      new = 0;
+      SET(*p_UCSR0B, 5); // Empty data register
       turn_led(receivedByte);
     }
   }
