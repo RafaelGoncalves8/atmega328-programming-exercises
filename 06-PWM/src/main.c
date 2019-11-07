@@ -1,18 +1,16 @@
 #define F_CPU 16000000UL
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <util/delay.h>
-
 
 /*
    MCU freq = 16Mhz
    max counter = 256
    prescaler = 0
    16000000/256 = 62500 Hz
-   flip led after 0.016 ms
+   interruption after 0.016 ms
    
-   change pwm after 10ms
-   freq = 625 Hz 
+   256*counter*0.016ms = 1s
+   counter = 244.14 ~ 244
 */
 
 
@@ -22,24 +20,23 @@
 
 
 volatile int counter;
-volatile int is_up = 1;
 
 
 void setup()
 {
   SET(DDRB, 3);  // Pin 11 as output.
-  SET(PORTB, 3); // Led initially off.
 
   /* Timer 2 configuration. */
   TCCR2A = 0;
   TCCR2B = 0;
   OCR2A = 0;
-  OCR2B = 0;
   
   SET(TCCR2B, CS20);  // No prescaler
   SET(TIMSK2, TOIE2); // Overflow interrupt enabled
-  SET(TCCR2A, WGM21); // Configure timer 2 as fast PWM
+
+  SET(TCCR2A, COM2A1);
   SET(TCCR2A, WGM20);
+  SET(TCCR2A, WGM21); // Configure timer 2 as fast PWM
     
   sei(); // Set interruptions on.
 }
@@ -53,11 +50,13 @@ ISR(TIMER2_OVF_vect)
 
 int main()
 {
-  int i;
+  int is_up = 1;
+  
   setup();
+  
   while(1)
   {
-    if (counter >= 625)
+    if (counter >= 244)
     {
       if (is_up)
       {
