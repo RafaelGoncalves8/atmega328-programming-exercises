@@ -41,12 +41,16 @@ void setup()
   TCCR2B = 0;
   OCR2A = 125;
   
-  SET(TCCR2A, WGM21); // Configure timer 2 as CTC
+
   SET(TCCR2B, CS21);
   SET(TCCR2B, CS22);  // No prescaler
   SET(TIMSK2, OCIE2A); // CompA interrupt enabled
   
   /* USART configuration. */
+  
+   // f = 9.6kHz, UBRR0 = 103
+  UBRR0H = 0b00000000;
+  UBRR0L = 0b01100111;
   
   CLR(UCSR0A, 1); // normal speed
   CLR(UCSR0A, 0); // multiprocess desactivated
@@ -76,6 +80,8 @@ void setup()
 
   CLR(UCSR0C, 0);
   
+  SET(TCCR2A, WGM21); // Configure timer 2 as CTC
+  
   sei(); // Set interruptions on.
 }
 
@@ -98,7 +104,7 @@ int main()
   setup();
   while(1)
   {
-    if (counter12 == TOP12)
+    if (counter12 >= TOP12)
     {
       counter12 = 0;
       if (led_12_on)
@@ -112,7 +118,7 @@ int main()
         SET(PORTB, 4);
       }
     }
-    else if (counter13 == TOP13)
+    else if (counter13 >= TOP13)
     {
       counter13 = 0;
       if (led_13_on)
@@ -126,11 +132,11 @@ int main()
         SET(PORTB, 5);
       }
     }
-    else if (counter_msg == TOPMSG)
+    else if (counter_msg >= TOPMSG)
     {
       counter_msg = 0;
         for (i = 0; i < 78; i++)
-          send_byte(msg[i]);
+		  send_byte(msg[i]);
     }
   }
 }
