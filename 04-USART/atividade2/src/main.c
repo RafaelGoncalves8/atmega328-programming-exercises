@@ -9,7 +9,6 @@
 #define CLR(PIN,N) (PIN &= ~(1<<N))
 
 /* Macro for setting colors. */
-/* #define COLOR(PIN,N) (PIN = (PIN & 0b11111000) & (colors[N] & 0b00000111)) */
 #define COLOR(PIN,N) (PIN = (colors[N] & 0b00000111))
 
 /* Rgb led output in PB0, PB1, PB2 */
@@ -24,7 +23,7 @@ unsigned char colors[8] = {
   0b00000011, // Yellow
   0b00000110, // Cyan
   0b00000101, // Magenta
-  0b00000111
+  0b00000111  // White
 };
 
 /* USART registers */
@@ -34,10 +33,6 @@ unsigned char *p_UCSR0C;
 unsigned char *p_UDR0;
 unsigned char *p_UBRR0H;
 unsigned char *p_UBRR0L;
-
-
-volatile unsigned char receivedByte;
-volatile unsigned char new = 0; // There isnt new info at receivedByte
 
 char *empty = "Vazio!\n";
 char *msg = "Comando incorreto\n";
@@ -49,7 +44,42 @@ char *cyan = "Comando: Acender LED - cor ciano\n";
 char *magenta = "Comando: Acender LED - cor magenta\n";
 char *white = "Comando: Acender LED - cor branco\n";
 
-int j = 0;
+volatile unsigned char receivedByte;
+
+volatile int j = 0;
+
+/* Circular buffer. */
+#define SIZE_OF_BUFFER 10
+volatile int buffer_len = 0;
+volatile char buffer[SIZE_OF_BUFFER];
+volatile int write_idx = 0;
+volatile int read_idx = 0;
+void buffer_write(char c);
+char buffer_read();
+
+void buffer_write(char c)
+{
+	if (buffer_len != SIZE_OF_BUFFER)
+	{
+		buffer[write_idx] = c;
+		write_idx = (write_idx + 11)%SIZE_OF_BUFFER;
+		buffer_len++;
+	}
+}
+
+char buffer_read()
+{
+	char c = '\0';
+	
+	if (buffer_len)
+	{
+		c = buffer[read_idx];
+		buffer_len--;
+		read_idx = (read_idx + 11)%SIZE_OF_BUFFER;
+	}
+	
+	return c;	
+}
 
 void setup(void)
 {
@@ -111,15 +141,15 @@ void send_byte(char c)
 
 ISR (USART_RX_vect)
 {
-  receivedByte = *p_UDR0;
-  new = 1;
+  buffer_write(*p_UDR0);
 }
 
 ISR (USART_UDRE_vect)
 {
   if (msg[j] == '\0')
   {
-    CLR(*p_UCSR0B, 5); // Empty data register
+	j = 0;
+	CLR(*p_UCSR0B, 5);
   }
   else
   {
@@ -180,12 +210,16 @@ int main(void)
 
   while(1)
   {
-    if (new)
+
+    if (buffer_len != 0)
     {
-      j = 0;
-      new = 0;
-      SET(*p_UCSR0B, 5); // Empty data register
-      turn_led(receivedByte);
+	  SET(*p_UCSR0B, 5);
+      turn_led(buffer_read());
     }
+	else
+	{
+	  msg = empty;
+	  SET(*p_UCSR0B, 5);
+	}
   }
 }
