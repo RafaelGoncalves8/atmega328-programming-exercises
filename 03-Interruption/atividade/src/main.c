@@ -1,7 +1,6 @@
+#define F_CPU 16000000UL // 16 MHz clock speed
 #include <avr/interrupt.h>
 #include <util/delay.h>
-
-#define F_CPU 16000000UL // 16 MHz clock speed
 
 /* Macros for setting and clearing pin PIN at position N. */ 
 #define SET(PIN,N) (PIN |=  (1<<N))
